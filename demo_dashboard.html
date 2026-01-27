@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RentFlow Pro - Enterprise Compliance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 850: '#1a202c', 900: '#111827', 950: '#0B0F19' }, // Deep charcoal
+                        indigo: { 500: '#6366f1', 600: '#4f46e5', 900: '#312e81' }, // Electric Blue
+                        emerald: { 500: '#10b981', 900: '#064e3b' }, // Compliance
+                        red: { 600: '#dc2626', 900: '#7f1d1d' }, // Risk
+                        amber: { 500: '#f59e0b', 900: '#78350f' } // Escalation
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    boxShadow: {
+                        'glow': '0 0 20px rgba(99, 102, 241, 0.15)',
+                        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #050505;
+            color: #cbd5e1;
+        }
+
+        /* Dark X Black */
+        .card {
+            background-color: #0f1115;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+        }
+
+        /* Dark Slate Card */
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);
+            border-left: 3px solid #6366f1;
+            color: #818cf8;
+        }
+
+        .nav-item:hover:not(.active) {
+            background-color: #1f2937;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            background: #050505;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #374151;
+            border-radius: 3px;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Tone Slider */
+        .tone-slider {
+            -webkit-appearance: none;
+            height: 4px;
+            background: #374151;
+            border-radius: 2px;
+        }
+
+        .tone-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #6366f1;
+            border: 2px solid #1f2937;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+        }
+
+        .tone-slider:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Timeline */
+        .timeline-line {
+            position: absolute;
+            left: 7px;
+            top: 24px;
+            bottom: 0;
+            width: 2px;
+            background: #1f2937;
+        }
+
+        .timeline-item:last-child .timeline-line {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="h-screen overflow-hidden flex selection:bg-indigo-500 selection:text-white">
+
+    <!-- SIDEBAR -->
+    <aside class="w-72 bg-[#0a0a0a] border-r border-[#1f2937] flex flex-col h-full shrink-0 z-30">
+        <div class="p-6 flex items-center gap-3 border-b border-[#1f2937]">
+            <div
+                class="w-8 h-8 rounded bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white font-bold shadow-glow">
+                R</div>
+            <div>
+                <div class="font-semibold text-white tracking-tight">RentFlow Pro</div>
+                <div class="text-[10px] text-indigo-400 font-bold tracking-widest uppercase">Legal Infrastructure</div>
+            </div>
+        </div>
+        <div class="flex-1 overflow-y-auto py-6 px-4 space-y-8">
+            <!-- OPERATIONS -->
+            <div>
+                <div
+                    class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 px-3 flex items-center gap-2">
+                    Operations <div class="h-px bg-slate-800 flex-1"></div>
+                </div>
+                <nav class="space-y-1">
+                    <button onclick="router('dashboard')" id="nav-dashboard"
+                        class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
+                            </path>
+                        </svg> Command Center
+                    </button>
+                    <button onclick="router('communications')" id="nav-communications"
+                        class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
+                            </path>
+                        </svg> Communications
+                    </button>
+                    <button onclick="router('exceptions')" id="nav-exceptions"
+                        class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-400">
+                        <div class="relative"><svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                                </path>
+                            </svg><span
+                                class="absolute -top-1 -right-1 h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                        </div> Review Queue
+                    </button>
+                </nav>
+            </div>
+
+            <!-- COMPLIANCE -->
+            <div>
+                <div
+                    class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 px-3 flex items-center gap-2">
+                    Compliance <div class="h-px bg-slate-800 flex-1"></div>
+                </div>
+                <nav class="space-y-1">
+                    <button onclick="router('jurisdiction')" id="nav-jurisdiction"
+                        class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                            </path>
+                        </svg> Jurisdiction
+                    </button>
+                    <button onclick="router('legal')" id="nav-legal"
+                        class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3">
+                            </path>
+                        </svg> Legal & Audits
+                    </button>
+                    <button onclick="router('policy')" id="nav-policy"
+                        class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg> Policy Engine
+                    </button>
+                </nav>
+            </div>
+
+            <!-- EXECUTIVE -->
+            <div>
+                <div
+                    class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 px-3 flex items-center gap-2">
+                    Executive <div class="h-px bg-slate-800 flex-1"></div>
+                </div>
+                <nav class="space-y-1">
+                    <button onclick="router('reports')" id="nav-reports"
+                        class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z">
+                            </path>
+                        </svg> Executive Intelligence
+                    </button>
+                </nav>
+            </div>
+        </div>
+        <div class="mt-auto p-4 border-t border-[#1f2937] bg-[#0a0a0a]">
+            <div class="flex items-center gap-3 p-3 rounded-lg bg-[#111827] border border-[#1f2937]">
+                <div class="relative flex-none">
+                    <div class="h-2 w-2 rounded-full bg-emerald-500"></div>
+                    <div class="absolute inset-0 h-2 w-2 rounded-full bg-emerald-500 animate-ping opacity-75"></div>
+                </div>
+                <div>
+                    <div class="text-[10px] font-bold text-white uppercase tracking-wider">System Secure</div>
+                    <div class="text-[9px] text-slate-500">Encrypted • Audit ON</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="flex-1 h-full overflow-hidden bg-[#050505] relative flex flex-col">
+        <!-- HEADER -->
+        <header
+            class="h-16 border-b border-[#1f2937] flex items-center justify-between px-8 bg-[#0a0a0a] shrink-0 z-20">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 px-3 py-1.5 bg-[#111827] border border-[#1f2937] rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_#10b981]"></span>
+                    <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest"
+                        id="header-jurisdiction">ON: Ontario (LTB)</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-3 pl-6 border-l border-[#1f2937]">
+                    <div class="text-right">
+                        <div class="text-xs font-bold text-white">Admin User</div>
+                        <div class="text-[9px] text-slate-500 uppercase tracking-wider">Property Manager</div>
+                    </div>
+                    <div
+                        class="w-9 h-9 rounded-full bg-[#111827] border border-[#1f2937] flex items-center justify-center text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <div id="main-content" class="flex-1 overflow-hidden relative text-slate-300">
+            <!-- Dynamic Content -->
+        </div>
+    </main>
+
+    <script>
+        // --- DATA & RULES ---
+        const TONE_LABELS = ["Soft / Empathetic", "Neutral Professional", "Firm Professional", "Very Firm", "Max Limit"];
+        const PROVINCE_RULES = {
+            'ON': {
+                name: "Ontario (LTB)",
+                code: "ON",
+                forms: "N4 / N11",
+                tolerance: 14,
+                quiet: "9 PM – 8 AM",
+                consent: "Express Written",
+                version: "v2025.4",
+                timeline: [
+                    { day: 1, label: "Day 1", action: "Friendly Reminder", color: "indigo" },
+                    { day: 5, label: "Day 5", action: "Firm / Professional Tone", color: "indigo" },
+                    { day: 10, label: "Day 10", action: "Escalation Warning", color: "amber" },
+                    { day: 14, label: "Day 14", action: "Draft N4 + Legal Pack", color: "red" }
+                ]
+            },
+            'AB': {
+                name: "Alberta (RTDRS)",
+                code: "AB",
+                forms: "Notice of Termination",
+                tolerance: 14,
+                quiet: "10 PM – 7 AM",
+                consent: "Implied (where applicable)",
+                version: "v2024.9",
+                timeline: [
+                    { day: 1, label: "Day 1", action: "Friendly Reminder", color: "indigo" },
+                    { day: 7, label: "Day 7", action: "Formal Warning", color: "amber" },
+                    { day: 14, label: "Day 14", action: "RTDRS Filing Prep", color: "red" }
+                ]
+            },
+            'BC': {
+                name: "British Columbia (RTB)",
+                code: "BC",
+                forms: "10-Day End Tenancy Notice",
+                tolerance: 10,
+                quiet: "9 PM – 8 AM",
+                consent: "Express Written",
+                version: "v2025.2",
+                timeline: [
+                    { day: 1, label: "Day 1", action: "Friendly Reminder", color: "indigo" },
+                    { day: 5, label: "Day 5", action: "Formal Warning", color: "amber" },
+                    { day: 10, label: "Day 10", action: "Draft RTB Notice + Pack", color: "red" }
+                ]
+            }
+        };
+
+        let state = {
+            view: 'dashboard',
+            province: localStorage.getItem('jurisdiction') || 'ON',
+            toneLevel: 1,
+            selectedTenantId: 2,
+            tenants: [
+                { id: 1, name: "Marcus Holloway", unit: "Apt 4B", balance: 0, status: 'PAID', convStatus: 'AI_HANDLING', consent: { sms: true, email: true }, riskScore: 12, messages: [{ id: 101, sender: 'AI', text: 'RentFlow: Payment of $2400 received. Thank you.', time: 'Today 10:00 AM', type: 'sms' }] },
+                { id: 2, name: "Sarah Connor", unit: "Apt 3A", balance: 1850, status: 'DUE', convStatus: 'NEEDS_REVIEW', consent: { sms: true, email: true }, commitment: { date: 'Jan 19', amount: 1850, status: 'PENDING' }, riskScore: 45, messages: [{ id: 201, sender: 'AI', text: 'RentFlow: Hi Sarah, rent of $1850 is due today. Please pay via portal.', time: 'Today 9:00 AM', type: 'sms' }, { id: 202, sender: 'Tenant', text: 'I get paid on Friday. Can I pay then?', time: 'Today 9:15 AM', type: 'sms' }, { id: 203, sender: 'System', text: 'Detected: Promise to Pay (Jan 19). Flagged for approval.', time: 'Today 9:16 AM', type: 'system' }] },
+                { id: 3, name: "Jean-Luc Picard", unit: "Suite 101", balance: 3200, status: 'LATE', convStatus: 'DRAFT_APPROVAL', consent: { sms: true, email: true }, riskScore: 68, messages: [{ id: 301, sender: 'AI', text: 'RentFlow Notice: Rent is past due ($3200). Please remit payment.', time: 'Yesterday', type: 'email' }, { id: 302, sender: 'Tenant', text: 'Check is in the mail. I am away.', time: 'Yesterday', type: 'email' }], draft: { baseText: "Thank you. Do you have a tracking number? We need it to note the file.", reason: "Compliance: Verified tracking required.", variations: ["Thanks, Captain. Tracking number useful.", "Thank you. Please provide tracking number.", "We need tracking number immediately.", "Policy requires tracking number now.", "FINAL REQUEST: Provide tracking."] } },
+                { id: 4, name: "Ellen Ripley", unit: "Unit 42", balance: 4500, status: 'DELINQUENT', convStatus: 'ESCALATED', consent: { sms: true, email: true }, risk: 'LEGAL_THREAT', riskScore: 92, messages: [{ id: 401, sender: 'AI', text: 'RentFlow Notice: Final warning for Unit 42. Legal action pending.', time: '2 Days Ago', type: 'email' }, { id: 402, sender: 'Tenant', text: 'I am contacting my lawyer and the LTB.', time: 'Yesterday', type: 'email' }, { id: 403, sender: 'System', text: 'CRITICAL: Legal Threat Detected. AI Paused.', time: 'Yesterday', type: 'system' }] }
+            ],
+            logs: [
+                { time: '09:00:01', text: 'System Check: Jurisdiction ON-LTB Loaded.', color: 'text-slate-500' },
+                { time: '09:12:44', text: 'Tenant #42 (Arthur): Opt-out processed. Channel Closed.', color: 'text-amber-500' },
+                { time: '09:15:22', text: 'Tenant #2 (Sarah): Promise detected. Review Created.', color: 'text-emerald-500' }
+            ]
+        };
+
+        // --- CORE ---
+        function router(view) {
+            state.view = view;
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`nav-${view}`)?.classList.add('active');
+            document.getElementById('header-jurisdiction').innerText = `${state.province}: ${PROVINCE_RULES[state.province].name}`;
+            const main = document.getElementById('main-content');
+            main.innerHTML = '';
+
+            if (view === 'dashboard') renderDashboard(main);
+            else if (view === 'communications') renderCommunications(main);
+            else if (view === 'exceptions') renderExceptions(main);
+            else if (view === 'jurisdiction') renderJurisdiction(main);
+            else if (view === 'legal') renderLegal(main);
+            else if (view === 'policy') renderPolicy(main);
+            else if (view === 'reports') renderExecutive(main);
+        }
+
+        function updateTone(val) { state.toneLevel = parseInt(val); document.getElementById('tone-label').innerText = TONE_LABELS[state.toneLevel]; if (document.getElementById('chat-msgs')) router('communications'); }
+        function updateProvince(val) {
+            state.province = val;
+            localStorage.setItem('jurisdiction', val);
+            state.logs.push({ time: new Date().toLocaleTimeString('en-US', { hour12: false }), text: `Jurisdiction changed to ${PROVINCE_RULES[val].name}`, color: 'text-indigo-400' });
+            router(state.view);
+        }
+
+        // --- RENDERERS ---
+
+        function renderDashboard(container) {
+            container.innerHTML = `
+                <div class="p-8 max-w-[1600px] mx-auto fade-in pb-20">
+                    <h1 class="text-xl font-semibold text-white mb-6">Command Center</h1>
+                    <div class="grid grid-cols-4 gap-5 mb-6">
+                        ${[
+                    { title: 'Collection Rate', val: '98.4%', trend: '+1.2% MoM', c: 'emerald' },
+                    { title: 'Delinquent Balance', val: '$9,550', trend: '-12% MoM', c: 'indigo' },
+                    { title: 'Active Escalations', val: '3', trend: 'Action Required', c: 'amber' },
+                    { title: 'Compliance Health', val: '100%', trend: 'Audit Ready', c: 'emerald' }
+                ].map(k => `
+                            <div class="card p-5 relative overflow-hidden group hover:border-slate-700 transition-colors">
+                                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">${k.title}</div>
+                                <div class="flex items-end justify-between relative z-10">
+                                    <div class="text-3xl font-bold text-white tracking-tight">${k.val}</div>
+                                    <div class="text-[10px] font-bold text-${k.c}-400 bg-${k.c}-500/10 px-2 py-0.5 rounded border border-${k.c}-500/20">${k.trend}</div>
+                                </div>
+                                <div class="absolute right-0 bottom-0 w-24 h-24 bg-${k.c}-500/5 rounded-full blur-2xl -mr-10 -mb-10 group-hover:bg-${k.c}-500/10 transition-all"></div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="grid grid-cols-3 gap-6 h-[450px]">
+                         <div class="col-span-2 card p-0 flex flex-col">
+                            <div class="p-3 border-b border-[#1f2937] bg-[#111827] flex justify-between items-center rounded-t-lg">
+                                <div class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div><span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Automation Feed</span></div>
+                                <span class="text-[9px] text-slate-600 font-mono">ENCRYPTED STREAM // TLS 1.3</span>
+                            </div>
+                            <div class="p-4 font-mono text-[11px] space-y-2 text-slate-400 overflow-y-auto flex-1 bg-[#0a0a0a]">
+                                ${state.logs.map(l => `<div class="border-l border-slate-800 pl-3 py-0.5"><span class="text-slate-600 mr-2">[${l.time}]</span> <span class="${l.color}">${l.text}</span></div>`).join('')}
+                                <div class="animate-pulse text-indigo-500">_</div>
+                            </div>
+                        </div>
+                        <div class="col-span-1 card p-5 flex flex-col">
+                            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-6">Escalation Forecast</div>
+                            <div class="space-y-6 flex-1">
+                                <div><div class="flex justify-between text-[11px] text-slate-300 mb-2 font-medium"><span>Likely Legal (N4)</span><span class="text-red-400">4 Units</span></div><div class="h-1.5 w-full bg-[#111827] rounded-full overflow-hidden"><div class="h-full bg-red-600" style="width: 25%"></div></div></div>
+                                <div><div class="flex justify-between text-[11px] text-slate-300 mb-2 font-medium"><span>At Risk (Warning)</span><span class="text-amber-400">12 Units</span></div><div class="h-1.5 w-full bg-[#111827] rounded-full overflow-hidden"><div class="h-full bg-amber-500" style="width: 45%"></div></div></div>
+                                <div class="p-3 bg-red-500/5 border border-red-500/10 rounded-lg text-[10px] text-red-300/80 leading-relaxed mt-auto"><strong>Risk Insight:</strong> 2 units in Building A matching 'Professional Tenant' profile. Manual review recommended.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function renderCommunications(container) {
+            const t = state.tenants.find(x => x.id === state.selectedTenantId);
+            const isCrit = t.convStatus === 'PAUSED' || t.convStatus === 'ESCALATED';
+            container.innerHTML = `
+                <div class="flex h-full fade-in">
+                    <!-- INBOX -->
+                    <div class="w-80 bg-[#0a0a0a] border-r border-[#1f2937] flex flex-col z-20">
+                         <div class="p-3 border-b border-[#1f2937]"><input class="w-full bg-[#111827] border border-[#1f2937] rounded px-3 py-1.5 text-xs text-white outline-none focus:border-indigo-500 placeholder-slate-600" placeholder="Search tenants..."></div>
+                         <div class="overflow-y-auto flex-1 divide-y divide-[#1f2937]">
+                            ${state.tenants.map(x => `<div onclick="state.selectedTenantId=${x.id};router('communications')" class="p-4 cursor-pointer hover:bg-[#111827] transition-colors relative ${state.selectedTenantId === x.id ? 'bg-[#111827] after:absolute after:left-0 after:top-0 after:h-full after:w-0.5 after:bg-indigo-500' : ''}"><div class="flex justify-between items-center mb-1"><span class="text-xs font-semibold text-slate-200">${x.name}</span><span class="text-[10px] text-slate-500">${x.unit}</span></div><div class="flex flex-wrap gap-1 mb-2">${renderBadges(x)}</div><div class="text-[10px] text-slate-500 truncate">${x.messages.at(-1)?.text}</div></div>`).join('')}
+                         </div>
+                    </div>
+                    <!-- CHAT AREA -->
+                    <div class="flex-1 flex flex-col bg-[#050505] relative">
+                         <!-- 3-COL COMMAND HEADER -->
+                         <div class="bg-[#0a0a0a] border-b border-[#1f2937] p-5 shadow-lg z-10 grid grid-cols-3 gap-6 items-center">
+                            
+                            <!-- COL 1: IDENTITY -->
+                            <div class="flex flex-col border-r border-[#1f2937] pr-4">
+                                <div class="flex items-center gap-2">
+                                     <h2 class="text-lg font-bold text-white tracking-tight">${t.name}</h2>
+                                     <span class="bg-[#111827] text-slate-400 text-[10px] px-2 py-0.5 rounded border border-[#1f2937]">${t.unit}</span>
+                                </div>
+                                <div class="mt-1">
+                                    <span class="text-[10px] uppercase font-bold text-slate-500 mr-2">Curent Balance</span>
+                                    <span class="text-sm font-bold ${t.balance > 0 ? 'text-red-500' : 'text-slate-200'}">$${t.balance}</span>
+                                </div>
+                            </div>
+
+                            <!-- COL 2: CONTEXT PILLS -->
+                            <div class="flex flex-col gap-2 border-r border-[#1f2937] pr-4">
+                                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Status Context</div>
+                                <div class="flex flex-wrap gap-2">
+                                    <div class="px-2 py-1 bg-[#111827] rounded border border-[#1f2937] flex gap-1.5 items-center"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span class="text-[9px] font-bold text-slate-400 uppercase">Jurisdiction</span></div>
+                                    <div class="px-2 py-1 bg-[#111827] rounded border border-[#1f2937] flex gap-1.5 items-center"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span><span class="text-[9px] font-bold text-slate-400 uppercase">Stage: Reminder</span></div>
+                                    <div class="px-2 py-1 bg-[#111827] rounded border border-[#1f2937] flex gap-1.5 items-center"><span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span><span class="text-[9px] font-bold text-slate-400 uppercase">Consent: Signed</span></div>
+                                </div>
+                            </div>
+
+                            <!-- COL 3: RISK & CONTROLS -->
+                            <div class="flex flex-col items-end gap-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Risk Index</div>
+                                    <div class="text-sm font-bold ${t.riskScore > 70 ? 'text-red-500' : (t.riskScore > 30 ? 'text-amber-500' : 'text-emerald-500')}">${t.riskScore}</div>
+                                </div>
+                                <button onclick="window.alert('Manager Takeover')" class="px-3 py-1.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[10px] font-bold text-white uppercase tracking-widest rounded transition-colors w-full">Take Over</button>
+                            </div>
+                         </div>
+
+                        <!-- TONE CONTROL CARD -->
+                        <div class="px-5 py-3 bg-[#0d1016] border-b border-[#1f2937] flex items-center justify-between">
+                             <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider flex-none">AI Tone (Compliance-Bound)</span>
+                             <div class="flex-1 mx-4 max-w-sm"><input type="range" min="0" max="4" value="${state.toneLevel}" class="tone-slider w-full" ${isCrit ? 'disabled' : ''} oninput="updateTone(this.value)"></div>
+                             <span class="text-[10px] font-bold text-slate-400 w-32 text-right" id="tone-label">${TONE_LABELS[state.toneLevel]}</span>
+                        </div>
+
+                         <!-- MESSAGES -->
+                         <div class="flex-1 overflow-y-auto p-8 space-y-6" id="chat-msgs">
+                            ${t.messages.map(m => renderMsg(m)).join('')}
+                            ${t.draft ? renderDraft(t.draft) : ''}
+                         </div>
+                         <!-- INPUT -->
+                         <div class="p-5 border-t border-[#1f2937] bg-[#0a0a0a]">
+                            ${isCrit ? `<div class="p-3 bg-red-500/10 border border-red-500/20 rounded text-center text-xs text-red-400 font-bold uppercase tracking-widest">⚠️ AI Locked: Legal Risk Detected</div>` : `<form onsubmit="sendMsg(event)" class="flex gap-3"><input id="mi" class="flex-1 bg-[#111827] border border-[#1f2937] rounded px-4 py-2.5 text-sm text-white focus:border-indigo-500 outline-none" placeholder="Type a message..."><button class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 rounded font-bold text-xs uppercase tracking-widest shadow-glow">Send</button></form>`}
+                         </div>
+                    </div>
+                </div>`;
+            setTimeout(() => { const b = document.getElementById('chat-msgs'); if (b) b.scrollTop = b.scrollHeight; }, 10);
+        }
+
+        function renderExecutive(container) {
+            container.innerHTML = `
+                <div class="p-10 max-w-[1700px] mx-auto fade-in pb-32 h-full overflow-y-auto">
+                     <div class="flex justify-between items-end mb-10">
+                        <div>
+                            <h1 class="text-2xl font-bold text-white uppercase tracking-wider mb-2">Executive Intelligence</h1>
+                            <p class="text-sm text-slate-500">Real-time decision support & compliance cockpit.</p>
+                        </div>
+                        <div class="flex gap-2">
+                             <button class="px-4 py-2 bg-[#111827] border border-[#1f2937] rounded text-xs font-bold text-slate-400 uppercase hover:text-white">Export PDF</button>
+                             <button class="px-4 py-2 bg-[#111827] border border-[#1f2937] rounded text-xs font-bold text-slate-400 uppercase hover:text-white">Config</button>
+                        </div>
+                     </div>
+
+                     <!-- TOP KPI ROW -->
+                     <div class="grid grid-cols-4 gap-8 mb-12">
+                        ${[
+                    { title: 'Collection Rate', val: '98.4%', trend: '+1.2%', c: 'emerald' },
+                    { title: 'Total Delinquency', val: '$32,450', trend: '-8.5%', c: 'indigo' },
+                    { title: 'Active Legal Cases', val: '12', trend: '+2', c: 'amber' },
+                    { title: 'Compliance Score', val: '99.9%', trend: 'Audit Pass', c: 'emerald' }
+                ].map(k => `
+                            <div class="card p-6 border-t-2 border-t-${k.c}-500">
+                                <div class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3">${k.title}</div>
+                                <div class="flex items-end justify-between">
+                                    <div class="text-4xl font-bold text-white tracking-tight">${k.val}</div>
+                                    <div class="text-xs font-bold text-${k.c}-400 bg-${k.c}-500/10 px-2 py-1 rounded">${k.trend}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                     </div>
+
+                     <!-- ROW 1: MANAGER LOAD (DE-CRAMPED) -->
+                     <div class="card p-10 flex flex-col justify-center relative overflow-hidden mb-8 h-80">
+                         <div class="flex items-center gap-16 z-10">
+                             <div class="w-48 h-48 relative shrink-0">
+                                 <canvas id="loadChart"></canvas>
+                                 <div class="absolute inset-0 flex items-center justify-center flex-col">
+                                     <span class="text-4xl font-bold text-white">27%</span>
+                                     <span class="text-[10px] text-slate-500 uppercase font-bold mt-1">Human Load</span>
+                                 </div>
+                             </div>
+                             <div>
+                                 <h3 class="text-2xl font-bold text-white mb-3">Manager Load Score</h3>
+                                 <p class="text-sm text-slate-400 mb-8 max-w-xl leading-relaxed">AI is currently handling <strong class="text-indigo-400">73% of all tenant interactions</strong> autonomously. Operations teams are required only for high-risk escalation and final legal approvals, reducing operational overhead significantly.</p>
+                                 <div class="flex gap-12">
+                                     <div><div class="text-4xl font-bold text-indigo-500 mb-1">73%</div><div class="text-[11px] uppercase text-slate-500 font-bold tracking-widest">AI Handled</div></div>
+                                     <div><div class="text-4xl font-bold text-amber-500 mb-1">3</div><div class="text-[11px] uppercase text-slate-500 font-bold tracking-widest">Critical Queue</div></div>
+                                     <div><div class="text-4xl font-bold text-emerald-500 mb-1">142h</div><div class="text-[11px] uppercase text-slate-500 font-bold tracking-widest">Saved (MoM)</div></div>
+                                 </div>
+                             </div>
+                         </div>
+                         <div class="absolute right-0 top-0 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                     </div>
+
+                     <!-- ROW 2: ESCALATION FORECAST -->
+                     <div class="card p-0 flex flex-col mb-8 h-64">
+                        <div class="p-5 border-b border-[#1f2937] bg-[#111827] rounded-t-lg flex justify-between items-center">
+                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Escalation Forecast (Next 7 Days)</h3>
+                             <div class="text-[10px] text-slate-600 font-mono">MODEL: RISK-V4</div>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-5">
+                            <table class="w-full text-left">
+                                <thead class="text-[10px] text-slate-500 uppercase tracking-widest"><tr><th class="pb-4">Unit</th><th class="pb-4">Risk Profile</th><th class="pb-4 text-right">Probability</th><th class="pb-4 text-right">Action</th></tr></thead>
+                                <tbody class="text-sm text-slate-400 divide-y divide-[#1f2937]">
+                                    <tr class="group hover:bg-[#1f2937] transition-colors"><td class="py-3 text-white font-bold">Unit 4B (Holloway)</td><td class="py-3 text-red-500 font-bold">Likely N4</td><td class="py-3 text-right">98% Prob</td><td class="py-3 text-right"><span class="text-[10px] uppercase font-bold text-indigo-400 cursor-pointer">View</span></td></tr>
+                                    <tr class="group hover:bg-[#1f2937] transition-colors"><td class="py-3 text-white font-bold">Unit 2A (Smith)</td><td class="py-3 text-amber-500 font-bold">At Risk</td><td class="py-3 text-right">65% Prob</td><td class="py-3 text-right"><span class="text-[10px] uppercase font-bold text-indigo-400 cursor-pointer">View</span></td></tr>
+                                    <tr class="group hover:bg-[#1f2937] transition-colors"><td class="py-3 text-white font-bold">Unit 12C (Doe)</td><td class="py-3 text-amber-500 font-bold">At Risk</td><td class="py-3 text-right">45% Prob</td><td class="py-3 text-right"><span class="text-[10px] uppercase font-bold text-indigo-400 cursor-pointer">View</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                     </div>
+
+                     <!-- ROW 3: CHARTS SIDE-BY-SIDE -->
+                     <div class="grid grid-cols-2 gap-8 h-80">
+                         <div class="card p-6 flex flex-col">
+                            <div class="flex justify-between mb-6">
+                                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest">Collection Velocity</h3>
+                                <div class="flex gap-2"><span class="w-2 h-2 rounded-full bg-indigo-500"></span><span class="text-[10px] text-slate-500">Current</span></div>
+                            </div>
+                            <div class="flex-1 relative"><canvas id="collectionChart"></canvas></div>
+                         </div>
+                         <div class="card p-6 flex flex-col">
+                             <div class="flex justify-between mb-6">
+                                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest">Risk Distribution</h3>
+                            </div>
+                             <div class="flex-1 relative"><canvas id="riskChart"></canvas></div>
+                         </div>
+                     </div>
+                </div>
+             `;
+
+            requestAnimationFrame(() => {
+                new Chart(document.getElementById('collectionChart'), {
+                    type: 'line',
+                    data: { labels: ['W1', 'W2', 'W3', 'W4'], datasets: [{ label: 'Collection %', data: [82, 88, 94, 98.4], borderColor: '#6366f1', tension: 0.4, borderWidth: 3, pointBackgroundColor: '#6366f1', pointRadius: 4 }] },
+                    options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#1f2937' }, ticks: { color: '#64748b' } }, x: { grid: { display: false }, ticks: { color: '#64748b' } } } }
+                });
+                new Chart(document.getElementById('riskChart'), {
+                    type: 'doughnut',
+                    data: { labels: ['Safe', 'At Risk', 'Critical'], datasets: [{ data: [85, 12, 3], backgroundColor: ['#10b981', '#f59e0b', '#dc2626'], borderWidth: 0, hoverOffset: 4 }] },
+                    options: { maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 11, family: 'Inter' }, padding: 20, boxWidth: 10 } } } }
+                });
+                new Chart(document.getElementById('loadChart'), {
+                    type: 'doughnut',
+                    data: { datasets: [{ data: [27, 73], backgroundColor: ['#fff', '#6366f1'], borderWidth: 0 }] },
+                    options: { maintainAspectRatio: false, cutout: '88%', hover: { mode: null }, plugins: { tooltip: { enabled: false } } }
+                });
+            });
+        }
+
+        function renderLegal(container) {
+            container.innerHTML = `
+                <div class="p-10 max-w-[1400px] mx-auto fade-in pb-20 h-full overflow-y-auto">
+                    <h1 class="text-2xl font-bold text-white uppercase tracking-wider mb-8">Legal & Audits</h1>
+
+                    <div class="grid grid-cols-3 gap-8 mb-8">
+                         <!-- READINESS SCORE -->
+                         <div class="card p-8 flex flex-col items-center justify-center text-center col-span-1">
+                             <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Audit Readiness Score</div>
+                             <div class="text-6xl font-bold text-white mb-2 tracking-tighter">99.9<span class="text-2xl text-slate-600">%</span></div>
+                             <div class="text-sm font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full mb-4">AUDIT PASS</div>
+                             <p class="text-xs text-slate-400">System is rigorously capturing every interaction for legal defensibility.</p>
+                         </div>
+
+                         <!-- EVIDENCE VAULT -->
+                         <div class="card p-0 col-span-2 flex flex-col">
+                             <div class="p-5 border-b border-[#1f2937] bg-[#111827] rounded-t-lg">
+                                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Evidence Vault (Recent Generated Packs)</h3>
+                             </div>
+                             <div class="p-5 space-y-3 overflow-y-auto max-h-60">
+                                 ${[
+                    { date: 'Today', unit: 'Unit 4B', type: 'N4 Tribunal Pack', size: '24MB' },
+                    { date: 'Yesterday', unit: 'Unit 2A', type: 'Communication Log', size: '1.2MB' },
+                    { date: 'Jan 15', unit: 'Unit 12C', type: 'Full Evidence Bundle', size: '145MB' },
+                ].map(f => `
+                                     <div class="flex items-center justify-between p-3 rounded border border-[#1f2937] bg-[#0a0a0a] hover:bg-[#1f2937] transition-colors cursor-pointer group">
+                                         <div class="flex items-center gap-3">
+                                             <div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-slate-500 group-hover:bg-indigo-600 group-hover:text-white transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>
+                                             <div><div class="text-sm font-bold text-white">${f.type}</div><div class="text-[10px] text-slate-500">${f.unit} • ${f.date}</div></div>
+                                         </div>
+                                         <div class="text-[10px] font-mono text-slate-600">${f.size}</div>
+                                     </div>
+                                 `).join('')}
+                             </div>
+                         </div>
+                    </div>
+
+                    <!-- AUDIT TIMELINE -->
+                    <div class="card p-8">
+                         <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-8">Compliance Audit Trail (Sample: Unit 4B)</h3>
+                         <div class="relative space-y-0 pl-2">
+                             ${[
+                    { date: 'Jan 17 (Today)', event: 'Escalation Review', status: 'Pending', c: 'amber' },
+                    { date: 'Jan 15', event: 'Automated Reminder Sent', status: 'Delivered', c: 'emerald' },
+                    { date: 'Jan 12', event: 'Promise to Pay Recorded', status: 'Broken', c: 'red' },
+                    { date: 'Jan 10', event: 'N4 Notice Generated', status: 'Valid', c: 'emerald' },
+                ].map((e, i) => `
+                                 <div class="timeline-item relative pl-10 pb-8">
+                                     <div class="timeline-line"></div>
+                                     <div class="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-[#111827] border-2 border-${e.c}-500 z-10"></div>
+                                     <div class="flex items-center justify-between">
+                                         <div>
+                                             <div class="text-sm font-bold text-white mb-1">${e.event}</div>
+                                             <div class="text-xs text-slate-500">${e.date}</div>
+                                         </div>
+                                         <div class="text-[10px] font-bold text-${e.c}-500 bg-${e.c}-500/10 px-2 py-1 rounded uppercase">${e.status}</div>
+                                     </div>
+                                 </div>
+                             `).join('')}
+                         </div>
+                    </div>
+                </div>`;
+        }
+
+        function renderPolicy(container) {
+            const p = PROVINCE_RULES[state.province];
+            container.innerHTML = `
+                <div class="p-10 max-w-[1400px] mx-auto fade-in pb-20">
+                     <div class="flex justify-between items-end mb-10">
+                        <div>
+                            <h1 class="text-2xl font-bold text-white uppercase tracking-wider mb-2">Policy Engine & Simulation</h1>
+                            <p class="text-sm text-slate-500">Jurisdiction Configuration: <span class="text-indigo-400 font-bold">${p.name}</span></p>
+                        </div>
+                     </div>
+
+                     <div class="grid grid-cols-3 gap-8">
+                         <!-- JURISDICTION PREVIEW -->
+                         <div class="col-span-1 space-y-6">
+                            <div class="card p-6 border-l-2 border-l-emerald-500">
+                                <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Active Framework</h3>
+                                <div class="space-y-4">
+                                     <div><div class="text-xs text-slate-500 mb-1">Eviction Form</div><div class="text-sm font-bold text-white">${p.forms}</div></div>
+                                     <div><div class="text-xs text-slate-500 mb-1">Late Tolerance</div><div class="text-sm font-bold text-white">${p.tolerance} Days</div></div>
+                                     <div><div class="text-xs text-slate-500 mb-1">Quiet Hours</div><div class="text-sm font-bold text-white">${p.quiet}</div></div>
+                                     <div><div class="text-xs text-slate-500 mb-1">Consent</div><div class="text-sm font-bold text-white">${p.consent}</div></div>
+                                </div>
+                            </div>
+                            <!-- TRIGGER BUILDER -->
+                             <div class="card p-6">
+                                <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Automation Triggers</h3>
+                                <div class="space-y-4">
+                                    ${p.timeline.slice(0, 3).map(step => `
+                                        <div class="flex items-center justify-between"><span class="text-sm text-slate-300">Auto-Remind ${step.label}</span><div class="w-8 h-4 bg-emerald-500 rounded-full relative"><div class="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full shadow"></div></div></div>
+                                    `).join('')}
+                                    <div class="flex items-center justify-between"><span class="text-sm text-slate-300">Tone Adjust on Day 5</span><div class="w-8 h-4 bg-emerald-500 rounded-full relative"><div class="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full shadow"></div></div></div>
+                                </div>
+                            </div>
+                         </div>
+
+                         <!-- SIMULATION PANEL -->
+                         <div class="col-span-2 card p-8">
+                             <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-8">Scenario Simulation: "Missed Payment"</h3>
+                             <!-- Visual Timeline Horizontal -->
+                             <div class="relative pt-6 pb-2">
+                                 <div class="absolute left-0 right-0 top-8 h-1 bg-[#1f2937] rounded-full"></div>
+                                 <div class="grid grid-cols-${p.timeline.length} gap-4 relative">
+                                     ${p.timeline.map(step => `
+                                         <div class="text-center group">
+                                             <div class="w-4 h-4 bg-${step.color}-500 rounded-full mx-auto mb-4 relative z-10 border-4 border-[#0a0a0a]"></div>
+                                             <div class="text-xs font-bold text-white mb-1">${step.label}</div>
+                                             <div class="text-[10px] text-slate-500 bg-[#111827] p-2 rounded border border-[#1f2937] min-h-[50px] flex items-center justify-center">${step.action}</div>
+                                         </div>
+                                     `).join('')}
+                                 </div>
+                             </div>
+                             <div class="mt-8 p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-lg flex gap-4 items-center">
+                                 <div class="p-2 bg-indigo-500/10 rounded"><svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+                                 <div class="text-xs text-slate-400"><strong>Simulation Active</strong>: This workflow activates automatically if the tenant does not respond to the Day 1 reminder.</div>
+                             </div>
+                             <div class="mt-4 flex items-center gap-2 text-[10px] text-slate-600 italic">
+                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                 All workflows are jurisdiction-aware and conform to local tenancy regulations.
+                             </div>
+                         </div>
+                     </div>
+                </div>`;
+        }
+
+        function renderJurisdiction(container) {
+            const provinces = [
+                { id: 'ON', name: 'Ontario (LTB)' },
+                { id: 'AB', name: 'Alberta (RTDRS)' },
+                { id: 'BC', name: 'British Columbia (RTB)' }
+            ];
+
+            container.innerHTML = `
+                <div class="p-10 max-w-[1400px] mx-auto fade-in h-full overflow-y-auto">
+                    <div class="flex flex-col gap-6">
+                        <div>
+                            <h1 class="text-2xl font-bold text-white uppercase tracking-wider mb-2">Jurisdiction Control</h1>
+                            <p class="text-sm text-slate-500 mb-6">Select the legal framework for automated rent collection workflows.</p>
+                            
+                            <!-- JURISDICTION SELECTOR -->
+                            <div class="inline-flex p-1 bg-[#111827] border border-[#1f2937] rounded-lg mb-8">
+                                ${provinces.map(p => `
+                                    <button onclick="updateProvince('${p.id}')" 
+                                        class="px-6 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${state.province === p.id ? 'bg-indigo-600 text-white shadow-glow' : 'text-slate-500 hover:text-slate-300'}">
+                                        ${p.name}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- POLICY PREVIEW -->
+                        <div id="policy-preview-container" class="border-t border-[#1f2937] pt-8">
+                            <!-- Policy content will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            renderPolicy(document.getElementById('policy-preview-container'));
+        }
+        function renderExceptions(container) {
+            const items = state.tenants.filter(t => ['NEEDS_REVIEW', 'ESCALATED', 'DRAFT_APPROVAL'].includes(t.convStatus));
+            container.innerHTML = `<div class="p-10 max-w-6xl mx-auto fade-in"><h1 class="text-xl font-semibold text-white mb-8">Review Queue</h1><div class="card overflow-hidden"><table class="w-full text-left"><thead class="bg-[#111827] border-b border-[#1f2937] text-[10px] font-bold text-slate-500 uppercase tracking-widest th-py-3"><tr><th class="px-6 py-4">Tenant</th><th class="px-6 py-4">Reason</th><th class="px-6 py-4">Rec</th><th class="px-6 py-4 text-right">Action</th></tr></thead><tbody class="divide-y divide-[#1f2937] text-sm text-slate-300">${items.map(t => `<tr class="hover:bg-[#111827]/50"><td class="px-6 py-4 font-bold text-white">${t.name}</td><td class="px-6 py-4">${renderBadges(t)}</td><td class="px-6 py-4 text-xs text-slate-500 uppercase tracking-wide">Review Required</td><td class="px-6 py-4 text-right"><button onclick="state.selectedTenantId=${t.id};router('communications')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-[10px] font-bold uppercase tracking-widest">Process</button></td></tr>`).join('')}</tbody></table></div></div>`;
+        }
+
+        // --- HELPERS & INIT ---
+        function renderBadges(t) {
+            let b = [];
+            if (t.convStatus === 'AI_HANDLING') b.push(['AI', 'indigo']);
+            if (t.convStatus === 'NEEDS_REVIEW') b.push(['REV', 'amber']);
+            if (t.convStatus === 'DRAFT_APPROVAL') b.push(['DRAFT', 'emerald']);
+            if (t.convStatus === 'ESCALATED') b.push(['ESC', 'red']);
+            return b.map(x => `<span class="text-[9px] font-bold bg-${x[1]}-500/10 text-${x[1]}-400 px-1.5 py-0.5 rounded border border-${x[1]}-500/20">${x[0]}</span>`).join('');
+        }
+        function renderMsg(m) {
+            const sys = m.sender === 'System';
+            const me = m.sender !== 'Tenant';
+            if (sys) return `<div class="flex justify-center"><div class="bg-[#111827] border border-[#1f2937] rounded-full px-3 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wide">🔒 ${m.text}</div></div>`;
+            return `<div class="flex flex-col ${me ? 'items-end' : 'items-start'}"><div class="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-1 mx-1">${m.sender}</div><div class="max-w-[85%] p-3 rounded text-sm shadow-sm ${me ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-[#111827] border border-[#1f2937] text-slate-300 rounded-tl-none'}">${m.text}</div></div>`;
+        }
+        function renderDraft(d) {
+            return `<div class="flex flex-col items-end animate-pulse"><div class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-1 mx-1">Draft: ${TONE_LABELS[state.toneLevel]}</div><div class="max-w-[85%] p-4 bg-[#0f1115] border border-indigo-500/30 rounded rounded-tr-none shadow-glow relative"><div class="text-sm text-indigo-100 mb-3">${d.variations[state.toneLevel]}</div><div class="flex justify-end gap-2"><button class="px-3 py-1.5 border border-[#1f2937] bg-[#111827] text-[10px] font-bold text-slate-400 uppercase hover:bg-[#1f2937] rounded transition-colors">Edit</button><button onclick="approveDraft()" class="px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-bold uppercase rounded shadow-lg hover:bg-indigo-500 transition-colors">Approve</button></div></div></div>`;
+        }
+        function sendMsg(e) { e.preventDefault(); const i = document.getElementById('mi'); const v = i.value.trim(); if (!v) return; if (["evict", "sue"].some(x => v.toLowerCase().includes(x))) { alert("BLOCKED: Legal Risk"); return; } state.tenants.find(x => x.id === state.selectedTenantId).messages.push({ id: Date.now(), sender: 'Manager', text: v, time: 'Now', type: 'sms' }); i.value = ''; router('communications'); }
+        function approveDraft() { const t = state.tenants.find(x => x.id === state.selectedTenantId); t.messages.push({ id: Date.now(), sender: 'AI', text: t.draft.variations[state.toneLevel], time: 'Now', type: 'sms' }); t.draft = null; t.convStatus = 'AI_HANDLING'; router('communications'); }
+
+        window.onload = () => router('dashboard');
+    </script>
+</body>
+
+</html>
