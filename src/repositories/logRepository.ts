@@ -1,4 +1,4 @@
-import db from '../database/db';
+import { supabase } from '../utils/supabaseClient';
 
 export interface CommunicationLog {
     id?: number;
@@ -10,19 +10,23 @@ export interface CommunicationLog {
     content: string;
 }
 
-const createLog = (log: CommunicationLog) => {
-    const stmt = db.prepare(`
-        INSERT INTO communication_logs (
-            tenant_id, timestamp, channel, message_type, status, content
-        ) VALUES (
-            @tenant_id, @timestamp, @channel, @message_type, @status, @content
-        )
-    `);
-    stmt.run(log);
+const createLog = async (log: CommunicationLog) => {
+    const { error } = await supabase
+        .from('communication_logs')
+        .insert([log]);
+        
+    if (error) console.error('Error logging communication:', error.message);
 };
 
-const getLogsByTenantId = (tenantId: number): CommunicationLog[] => {
-    return db.prepare('SELECT * FROM communication_logs WHERE tenant_id = ? ORDER BY timestamp DESC').all(tenantId) as CommunicationLog[];
+const getLogsByTenantId = async (tenantId: number): Promise<CommunicationLog[]> => {
+    const { data, error } = await supabase
+        .from('communication_logs')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .order('timestamp', { ascending: false });
+
+    if (error) throw new Error(error.message);
+    return data as CommunicationLog[];
 };
 
 export default {

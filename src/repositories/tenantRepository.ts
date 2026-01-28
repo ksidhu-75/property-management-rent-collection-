@@ -1,4 +1,4 @@
-import db from '../database/db';
+import { supabase } from '../utils/supabaseClient';
 
 export interface Tenant {
     id?: number;
@@ -22,36 +22,44 @@ export interface Tenant {
     notes?: string;
 }
 
-const getAllTenants = (): Tenant[] => {
-    return db.prepare('SELECT * FROM tenants').all() as Tenant[];
+const getAllTenants = async (): Promise<Tenant[]> => {
+    const { data, error } = await supabase
+        .from('tenants')
+        .select('*');
+    
+    if (error) throw new Error(error.message);
+    return data as Tenant[];
 };
 
-const getTenantById = (id: number): Tenant | undefined => {
-    return db.prepare('SELECT * FROM tenants WHERE id = ?').get(id) as Tenant | undefined;
+const getTenantById = async (id: number): Promise<Tenant | undefined> => {
+    const { data, error } = await supabase
+        .from('tenants')
+        .select('*')
+        .eq('id', id)
+        .single();
+    
+    if (error) return undefined;
+    return data as Tenant;
 };
 
-const createTenant = (tenant: Tenant): number | bigint => {
-    const stmt = db.prepare(`
-        INSERT INTO tenants (
-            full_name, email, phone_number, property_name, unit_number,
-            monthly_rent, rent_due_day, lease_start_date, lease_end_date,
-            preferred_contact_method, opted_out, balance_owing, status
-        ) VALUES (
-            @full_name, @email, @phone_number, @property_name, @unit_number,
-            @monthly_rent, @rent_due_day, @lease_start_date, @lease_end_date,
-            @preferred_contact_method, @opted_out, @balance_owing, @status
-        )
-    `);
-    const info = stmt.run(tenant);
-    return info.lastInsertRowid;
+const createTenant = async (tenant: Tenant): Promise<number> => {
+    const { data, error } = await supabase
+        .from('tenants')
+        .insert([tenant])
+        .select('id')
+        .single();
+
+    if (error) throw new Error(error.message);
+    return data.id;
 };
 
-const updateTenant = (id: number, updates: Partial<Tenant>) => {
-    const fields = Object.keys(updates).map((key) => `${key} = @${key}`).join(', ');
-    if (fields.length === 0) return;
+const updateTenant = async (id: number, updates: Partial<Tenant>) => {
+    const { error } = await supabase
+        .from('tenants')
+        .update(updates)
+        .eq('id', id);
 
-    const stmt = db.prepare(`UPDATE tenants SET ${fields} WHERE id = @id`);
-    stmt.run({ ...updates, id });
+    if (error) throw new Error(error.message);
 };
 
 export default {

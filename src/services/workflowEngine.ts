@@ -25,18 +25,18 @@ import { getDaysUntilDue, getDaysPastDue, isSameDay, getCurrentTimestamp } from 
  * Main entry point - runs daily check for all tenants
  * Called by server.ts via POST /api/trigger-daily
  */
-const runDailyCheck = (): void => {
+const runDailyCheck = async (): Promise<void> => {
     console.log('[Workflow] Starting Daily Check...');
-    const tenants = tenantService.getAllTenants();
+    const tenants = await tenantService.getAllTenants();
     const today = new Date();
 
-    tenants.forEach((tenant) => {
+    for (const tenant of tenants) {
         try {
-            evaluateTenant(tenant, today);
+            await evaluateTenant(tenant, today);
         } catch (error) {
             console.error(`[Workflow] Error processing tenant ${tenant.id}:`, error);
         }
-    });
+    }
     console.log('[Workflow] Daily Check Completed.');
 };
 
@@ -44,7 +44,7 @@ const runDailyCheck = (): void => {
  * Evaluate a single tenant and send appropriate reminder
  * Uses date helpers to fix month boundary bugs
  */
-const evaluateTenant = (tenant: Tenant, today: Date): void => {
+const evaluateTenant = async (tenant: Tenant, today: Date): Promise<void> => {
     // 1. Check Ignore Conditions
     if (tenant.opted_out) {
         console.log(`[Workflow] Skipped Tenant ${tenant.id}: Opted Out`);
@@ -75,14 +75,14 @@ const evaluateTenant = (tenant: Tenant, today: Date): void => {
     // 4. Evaluate Pre-Due Reminders
     // Condition: Balance >= Monthly Rent AND (3 or 5 days before due)
     if ((daysUntilDue === 3 || daysUntilDue === 5) && tenant.balance_owing >= tenant.monthly_rent) {
-        sendMessage(tenant, 'PRE_DUE', `Reminder: Your rent is due in ${daysUntilDue} days.`);
+        await sendMessage(tenant, 'PRE_DUE', `Reminder: Your rent is due in ${daysUntilDue} days.`);
         return;
     }
 
     // 5. Evaluate Due Date Reminder
     // Condition: Due date is today AND Balance >= Monthly Rent
     if (daysUntilDue === 0 && tenant.balance_owing >= tenant.monthly_rent) {
-        sendMessage(tenant, 'DUE', `Heads up! Your rent is due today.`);
+        await sendMessage(tenant, 'DUE', `Heads up! Your rent is due today.`);
         return;
     }
 
@@ -90,19 +90,19 @@ const evaluateTenant = (tenant: Tenant, today: Date): void => {
     if (tenant.balance_owing > 0) {
         // Late Stage 1: 3 or 5 days past due
         if (daysPastDue === 3 || daysPastDue === 5) {
-            sendMessage(tenant, 'LATE_1', `We noticed we haven't received your rent payment yet.`);
+            await sendMessage(tenant, 'LATE_1', `We noticed we haven't received your rent payment yet.`);
             return;
         }
 
         // Late Stage 2: 7 or 10 days past due
         if (daysPastDue === 7 || daysPastDue === 10) {
-            sendMessage(tenant, 'LATE_2', `URGENT: Your rent is now ${daysPastDue} days overdue.`);
+            await sendMessage(tenant, 'LATE_2', `URGENT: Your rent is now ${daysPastDue} days overdue.`);
             return;
         }
 
         // Final Notice: 14+ days past due (only send once)
         if (daysPastDue >= 14 && tenant.reminder_stage !== 'FINAL') {
-            sendMessage(tenant, 'FINAL', `FINAL NOTICE: Your rent is significantly overdue.`);
+            await sendMessage(tenant, 'FINAL', `FINAL NOTICE: Your rent is significantly overdue.`);
             return;
         }
     }
@@ -111,7 +111,7 @@ const evaluateTenant = (tenant: Tenant, today: Date): void => {
 /**
  * Send message via preferred communication method and update tenant state
  */
-const sendMessage = (tenant: Tenant, stage: ReminderStage, content: string): void => {
+const sendMessage = async (tenant: Tenant, stage: ReminderStage, content: string): Promise<void> => {
     console.log(`[Workflow] Sending ${stage} to Tenant ${tenant.id}...`);
 
     // Send via email if preferred
@@ -136,7 +136,7 @@ const sendMessage = (tenant: Tenant, stage: ReminderStage, content: string): voi
     }
 
     // Update tenant state with timestamp and stage
-    tenantRepository.updateTenant(tenant.id!, {
+    await tenantRepository.updateTenant(tenant.id!, {
         last_message_sent: getCurrentTimestamp(),
         reminder_stage: stage
     });

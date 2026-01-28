@@ -7,8 +7,8 @@ import { getCurrentTimestamp } from '../utils/dateHelpers';
  * Get all tenants
  * @returns Array of all tenants
  */
-const getAllTenants = (): Tenant[] => {
-    return tenantRepository.getAllTenants();
+const getAllTenants = async (): Promise<Tenant[]> => {
+    return await tenantRepository.getAllTenants();
 };
 
 /**
@@ -16,8 +16,8 @@ const getAllTenants = (): Tenant[] => {
  * @param id - Tenant ID
  * @returns Tenant or undefined if not found
  */
-const getTenantById = (id: number): Tenant | undefined => {
-    return tenantRepository.getTenantById(id);
+const getTenantById = async (id: number): Promise<Tenant | undefined> => {
+    return await tenantRepository.getTenantById(id);
 };
 
 /**
@@ -25,7 +25,7 @@ const getTenantById = (id: number): Tenant | undefined => {
  * @param tenantData - Tenant creation data
  * @returns Created tenant with ID
  */
-const createTenant = (tenantData: CreateTenantDto | Tenant): Tenant => {
+const createTenant = async (tenantData: CreateTenantDto | Tenant): Promise<Tenant> => {
     // Validate required fields
     if (!tenantData.full_name || !tenantData.email || !tenantData.monthly_rent) {
         throw new ValidationError('Missing required tenant fields');
@@ -53,7 +53,7 @@ const createTenant = (tenantData: CreateTenantDto | Tenant): Tenant => {
         balance_owing: (tenantData as any).balance_owing || 0
     };
 
-    const id = tenantRepository.createTenant(newTenant);
+    const id = await tenantRepository.createTenant(newTenant);
     newTenant.id = Number(id);
     return newTenant;
 };
@@ -70,13 +70,13 @@ const onboardingTenant = createTenant;
  * @param status - New status
  * @param balance - New balance
  */
-const updateTenantStatus = (id: number, status: Tenant['status'], balance: number): void => {
-    const tenant = tenantRepository.getTenantById(id);
+const updateTenantStatus = async (id: number, status: Tenant['status'], balance: number): Promise<void> => {
+    const tenant = await tenantRepository.getTenantById(id);
     if (!tenant) {
         throw new NotFoundError('Tenant not found');
     }
 
-    tenantRepository.updateTenant(id, { status, balance_owing: balance });
+    await tenantRepository.updateTenant(id, { status, balance_owing: balance });
 };
 
 /**
@@ -84,8 +84,8 @@ const updateTenantStatus = (id: number, status: Tenant['status'], balance: numbe
  * @param id - Tenant ID
  * @param amount - Payment amount
  */
-const recordPayment = (id: number, amount: number): void => {
-    const tenant = tenantRepository.getTenantById(id);
+const recordPayment = async (id: number, amount: number): Promise<void> => {
+    const tenant = await tenantRepository.getTenantById(id);
     if (!tenant) {
         throw new NotFoundError('Tenant not found');
     }
@@ -97,7 +97,7 @@ const recordPayment = (id: number, amount: number): void => {
     const newBalance = Math.max(0, tenant.balance_owing - amount);
     const newStatus = newBalance === 0 ? 'PAID' : 'PARTIAL';
 
-    tenantRepository.updateTenant(id, {
+    await tenantRepository.updateTenant(id, {
         last_payment_date: getCurrentTimestamp(),
         last_payment_amount: amount,
         balance_owing: newBalance,
@@ -110,13 +110,13 @@ const recordPayment = (id: number, amount: number): void => {
  * Opt out a tenant from automated communications
  * @param id - Tenant ID
  */
-const optOutTenant = (id: number): void => {
-    const tenant = tenantRepository.getTenantById(id);
+const optOutTenant = async (id: number): Promise<void> => {
+    const tenant = await tenantRepository.getTenantById(id);
     if (!tenant) {
         throw new NotFoundError('Tenant not found');
     }
 
-    tenantRepository.updateTenant(id, { opted_out: 1 });
+    await tenantRepository.updateTenant(id, { opted_out: 1 });
 };
 
 export default {
