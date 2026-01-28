@@ -1,2 +1,2 @@
-# property-management-rent-collection-
-RentFlow Demo Dashboard 
+# Property Management Rent Collection
+RentFlow Dashboard and Scripts
